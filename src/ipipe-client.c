@@ -280,7 +280,6 @@ static void icli_ipipe_base_init (ICliIpipeIface * iface) {
  * Copyright (c) 2010, RidgeRun
  * All rights reserved.
  *
- * GPL2 license - See http://www.opensource.org/licenses/gpl-2.0.php for complete text.
 */
 GType icli_ipipe_get_type (void) {
 	static volatile gsize icli_ipipe_type_id__volatile = 0;

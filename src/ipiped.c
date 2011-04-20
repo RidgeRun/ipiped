@@ -554,8 +554,6 @@ static void ipipe_finalize (GObject* obj) {
  *
  * Copyright(c) 2010, RidgeRun
  * All rights reserved.
- *
- * GPL2 license - See http://www.opensource.org/licenses/gpl-2.0.php for complete text.
 */
 GType ipipe_get_type (void) {
 	static volatile gsize ipipe_type_id__volatile = 0;

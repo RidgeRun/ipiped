@@ -6,7 +6,6 @@
  * Copyright (c) 2010, RidgeRun
  * All rights reserved.
  *
- * GPL2 license - See http://www.opensource.org/licenses/gpl-2.0.php for complete text.
 */
 
 using Posix, GLib;
