@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.ridgerun.ipiped
+Exec=@prefix@/bin/ipiped
+User=root

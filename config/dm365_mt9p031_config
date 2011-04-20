@@ -1,0 +1,4 @@
+set-previewer-mode cont
+flip-vertical OFF
+flip-horizontal OFF
+set-bayer-pattern GrRBGb

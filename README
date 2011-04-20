@@ -1,0 +1,15 @@
+ipiped
+------
+
+Image Pipe Daemon is a daemon with DBus interface that allows to control and
+interact with the functionality provided by the image pipe (ipipe) hardware
+on Texas Instruments SoC families like Davincis or OMAP.
+
+Drivers exists for controlling the functionality of the image procesing found
+on this SoCs, however ipiped offers and extra layer of funcionality to make
+easier for applications to control the settings.
+
+ipiped also supports running implementations of algorithms running with support
+from the ipipe hardware (like autoexposure/autowhite balance algorithms).
+Currentely ipiped supports RidgeRun's proprietary AEW/AE library but it can be
+extended to integrate with others.
