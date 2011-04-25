@@ -1,3 +1,41 @@
-<html>
-<h1>Image Pipe Daemon</h1>
-</html>
+---
+layout: default
+title: Image Pipe Daemon
+source: https://github.com/RidgeRun/ipiped
+---
+
+<div id="blog">
+  <h1>Blog</h1>
+  {% for post in site.posts limit:3 %}
+  <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
+  {{ post.content }}
+  <em>Posted on {{ post.date | date_to_long_string }}.</em>
+  {% endfor %}
+
+</div>
+
+<div id="sidebar">
+  <h1> Description </h1>
+  <p> Image Pipe Daemon (ipiped) is a daemon for controlling the video capture subsystem
+      on Davinci family of processors.
+  </p>
+
+  <h1>Documentation</h1>
+  <p>All the documentation is keep at the <a href="{{ page.source }}/wiki">wiki</a>.
+  </p>
+
+  <h1>Maintainers</h1>
+  <ul>
+   <li><a href="https://github.com/ddompe">ddompe</a>
+   <li><a href="https://github.com/mmontero">mmontero</a>
+  </ul>
+
+  <h1>Older posts</h1>
+  <ul>
+   {% for post in site.posts offset:3 %}
+    <li><span class="date">{{ post.date | date: "%b %d, %Y" }}</span> &raquo; <a href="{{ post.url }}">{{ post.title }}</a></li>
+    {% endfor %}
+  </ul>
+
+
+</div>
