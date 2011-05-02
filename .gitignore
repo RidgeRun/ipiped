@@ -1,0 +1,11 @@
+Makefile
+com.ridgerun.ipiped.service
+config.h
+config.log
+config.status
+*.pc
+ipipe-client
+*.o
+ipiped
+stamp-h1
+.deps
