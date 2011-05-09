@@ -153,21 +153,24 @@ public class Ipiped_mt9p031 : AbstcSensor{
      * Use the get_sensor_gain_i function to obtain the RGB sensor gains 
      * and print them
      */
-    public int get_sensor_gain() throws IOError{
+    public bool get_sensor_gain(out double _red_gain, out double _green_gain,
+        out double _blue_gain) throws IOError{
         uint32 q10red_gain=0,q10green_gain=0,q10blue_gain=0;
         if (this.capture_fd < 0){
             if (open_sensor() < 0)
-                return -1;
+                return false;
         }
 
         if (get_sensor_gain_i(&this.capture_fd, &this.owner_capture_fd,
-            &q10red_gain, &q10green_gain, &q10blue_gain)<0){
-            return -1;
+                   &q10red_gain, &q10green_gain, &q10blue_gain) != 0) {
+            Posix.stderr.printf("Error:\n Failed to get the sensor gain\n");
+            return false;
+        } else {
+            _red_gain = ((double)(q10red_gain))/1024;
+            _green_gain= ((double)(q10green_gain))/1024;
+            _blue_gain = ((double)(q10blue_gain))/1024;
+            return true;
         }
-        Posix.stdout.printf("Set gain to R=%f  G=%f  B=%f\n",
-            (float)(q10red_gain)/1024, (float)(q10green_gain)/1024, 
-                (float)(q10blue_gain)/1024);
-        return 0;
     }
 
     /**
@@ -290,15 +293,18 @@ public class Ipiped_mt9p031 : AbstcSensor{
     }
 
 
-    public int get_exposure_time() throws IOError{
-        uint32 exp_time = 0;
+    public bool get_exposure_time(out int exp_time) throws IOError{
         if (this.capture_fd < 0){
             if (open_sensor() < 0)
-                return -1;
+                return false;
         }
-        get_exposure_time_i(&this.capture_fd, &this.owner_capture_fd, &exp_time); 
-        Posix.stdout.printf("Exposure time: %u\n", exp_time);
-        return 0;
+   
+        if (get_exposure_time_i(&this.capture_fd, &this.owner_capture_fd, &exp_time) != 0) {
+            Posix.stderr.printf("Error:\n Failed to get the exposure time\n");
+            return false;
+        } 
+        
+        return true;
     }
     
 #if (RRAEW)

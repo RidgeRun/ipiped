@@ -163,7 +163,7 @@ public class IpipeCli: GLib.Object {
     }
 
     private int cli_run_config_script(string[]? args) {
-        string dir ="usr/share/ipiped/";
+        string dir ="/usr/share/ipiped/";
         string data, filename;
         if (args[1] == null) {
             Posix.stdout.printf("Error:\nMissing argument.Execute:'help <command>'\n");
@@ -201,12 +201,12 @@ public class IpipeCli: GLib.Object {
             }
             i++;
         }
-        int wait_time = args[5].to_int();
-        int min_fps = args[6].to_int();
-        int width = args[8].to_int();
-        int height = args[9].to_int();
-        int segment_factor = args[7].to_int();
-        int center_percentage = args[10].to_int();
+        int wait_time = int.parse(args[5]);
+        int min_fps = int.parse(args[6]);
+        int width = int.parse(args[8]);
+        int height = int.parse(args[9]);
+        int segment_factor = int.parse(args[7]);
+        int center_percentage = int.parse(args[10]);
         try {
             int ret = ipipe.init_aew(args[1], args[2], args[3], args[4], wait_time, 
                 min_fps, segment_factor, width, height, center_percentage);

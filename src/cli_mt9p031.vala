@@ -3,10 +3,11 @@ using GLib;
 public interface Imt9p031: Object{
     public abstract int set_sensor_gain(double r_gain, double g_gain, 
         double b_gain) throws IOError;
-    public abstract int get_sensor_gain() throws IOError;
+    public abstract bool get_sensor_gain(out double _red_gain,
+        out double blue_gain, out double green_gain) throws IOError;
     public abstract int sensor_flip_vertically(string state) throws IOError;
     public abstract int sensor_flip_horizontally(string state) throws IOError;
-    public abstract int get_exposure_time() throws IOError;
+    public abstract bool get_exposure_time(out int exp_time) throws IOError;
     public abstract int set_exposure_time(int _exp_time) throws IOError;
 }
 
@@ -53,11 +54,15 @@ public class cli_mt9p031 : AbstcCliRegister{
     public int cmd_get_sensor_gain( string[]? args) {
  
        try {
-            int ret = sensor.get_sensor_gain();
-            if (ret != 0) {
-                stderr.printf("Error:\n Failed to get sensor gain\n");
+           double red_gain = 0, green_gain = 0, blue_gain = 0;
+
+            if (!sensor.get_sensor_gain(out red_gain, 
+                    out green_gain, out blue_gain)) {
+                stderr.printf("Error:\n Failed to get the sensor gain\n");
                 return -1;
             } else {
+                Posix.stdout.printf("Sensor gain:  R=%f  G=%f  B=%f\n",
+                    red_gain,green_gain,blue_gain);
                 if (_debug)
                     stdout.printf("Ok.Get sensor gain\n");
                 return 0;
@@ -141,11 +146,12 @@ public class cli_mt9p031 : AbstcCliRegister{
 
     public int cmd_get_exposure_time( string[]? args) {
         try {
-            int ret = sensor.get_exposure_time();
-            if (ret != 0) {
+            int exp_time = 0;
+            if (!sensor.get_exposure_time(out exp_time)) {
                 stderr.printf("Error:\n Failed to set exposure time\n");
                 return -1;
             } else {
+                stdout.printf("Exposure time: %u\n", exp_time);
                 if (_debug)
                     stdout.printf("Ok.Get exposure time\n");
                 return 0;
