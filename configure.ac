@@ -32,6 +32,12 @@ AC_SUBST(GTHREAD_CFLAGS)
 AC_SUBST(GTHREAD_LIBS)
 
 
+dnl Now we're ready to ask for dbus
+PKG_CHECK_MODULES(DBUS, dbus-1, HAVE_DBUS=yes, HAVE_DBUS=no)
+dnl Give error and exit if we don't have dbus
+if test "x$HAVE_DBUS" = "xno"; then
+  AC_MSG_ERROR([you need dbus development packages installed!])
+fi
 _PKG_CONFIG([DBUS_SYSCONFIG_DIR],[variable=sysconfdir],[dbus-1])
 DBUS_SYSCONFIG_DIR=$pkg_cv_DBUS_SYSCONFIG_DIR
 AC_SUBST(DBUS_SYSCONFIG_DIR)
