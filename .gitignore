@@ -9,3 +9,4 @@ ipipe-client
 ipiped
 stamp-h1
 .deps
+*.stamp
