@@ -8,7 +8,7 @@ public interface Imt9p031: Object{
     public abstract int sensor_flip_vertically(string state) throws IOError;
     public abstract int sensor_flip_horizontally(string state) throws IOError;
     public abstract bool get_exposure_time(out int exp_time) throws IOError;
-    public abstract int set_exposure_time(int _exp_time) throws IOError;
+    public abstract int set_exposure_time(uint _exp_time) throws IOError;
 }
 
 public class cli_mt9p031 : AbstcCliRegister{
@@ -125,7 +125,7 @@ public class cli_mt9p031 : AbstcCliRegister{
             return -1;
         }
 
-        int time = int.parse(args[1]);
+        uint time = int.parse(args[1]);
 
         try {
             int ret = sensor.set_exposure_time(time);

@@ -391,7 +391,7 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
         }
 
         strcpy(mod_param.version,cap.version);
-        mod_param.module_id = PREV_LUM_ADJ;;
+        mod_param.module_id = PREV_LUM_ADJ;
         mod_param.len =(uint8)sizeof(LumAdj);
         mod_param.param = &lum_adj;
 

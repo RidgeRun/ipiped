@@ -263,7 +263,7 @@ public class Ipiped_mt9p031 : AbstcSensor{
         return 0; 
     }
 
-    public int set_exposure_time(int _exp_time) throws IOError{
+    public int set_exposure_time(uint _exp_time) throws IOError{
         if (this.capture_fd < 0){
             if (open_sensor() < 0)
                 return -1;
@@ -403,7 +403,7 @@ public class Ipiped_mt9p031 : AbstcSensor{
             return -1;
         }
         sensor.colorptn = colorptn;
-        sensor.max_exp_time = 2500;
+        sensor.max_exp_time = 0x7fffffff;
         sensor.min_exp_time = 1;
         sensor.max_gain = 128;
         sensor.min_gain = 1;

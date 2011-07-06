@@ -16,7 +16,7 @@ public interface ICliIpipe: Object{
     public abstract string get_video_processor() throws IOError;
     public abstract string get_sensor() throws IOError;
     public abstract int init_aew(string wb, string ae, string g, string meter, 
-        int time, int fps, int segment_factor, int width, int height, 
+        int time, int segment_factor, int width, int height, 
         int center_percentage) throws IOError;
     public abstract void close_aew() throws IOError;
 }
@@ -194,7 +194,7 @@ public class IpipeCli: GLib.Object {
     #if (RRAEW)
         int i=0;
         // Check if there are missing args 
-        while (i < 11) { 
+        while (i < 10) { 
             if (args[i] == null) {
                 Posix.stdout.printf("Error:\nMissing argument.Execute:'help <command>'\n");
                 return -1;
@@ -202,14 +202,13 @@ public class IpipeCli: GLib.Object {
             i++;
         }
         int wait_time = int.parse(args[5]);
-        int min_fps = int.parse(args[6]);
-        int width = int.parse(args[8]);
-        int height = int.parse(args[9]);
-        int segment_factor = int.parse(args[7]);
-        int center_percentage = int.parse(args[10]);
+        int width = int.parse(args[7]);
+        int height = int.parse(args[8]);
+        int segment_factor = int.parse(args[6]);
+        int center_percentage = int.parse(args[9]);
         try {
             int ret = ipipe.init_aew(args[1], args[2], args[3], args[4], wait_time, 
-                min_fps, segment_factor, width, height, center_percentage);
+                segment_factor, width, height, center_percentage);
             if (ret < 0) {
                 Posix.stderr.printf("Error:\n Failed to initialize aew\n");
                 return -1;
@@ -264,7 +263,7 @@ public class IpipeCli: GLib.Object {
             "Enable/Disable debug messages", "\n\ttrue: enables debug, " 
             + "\n\tfalse: disables debug" );
         cmd.new_command("init-aew", cli_ini_aew, "init-aew <WB> <AE> <G> <EM> " 
-            + "<T[us]> <fps> <seg> <width> <height> <center_percentage>",
+            + "<T[us]> <seg> <width> <height> <center_percentage>",
                 "Initialize AEW algorithms",
             "\n\tWB: white balance algorithm, the options are:"
                 + "\n\t\tG -for gray world algorithm" 
@@ -291,7 +290,6 @@ public class IpipeCli: GLib.Object {
                 + "\n\t\ton 6 pieces and weighting them to avoid backlighting" 
             + "\n\tT: wait time in us, specifies the time between " 
             + "\n\t\talgorithm adjustments, max value=1s=1000000us"
-            + "\n\tfps: minimum frame rate" 
             + "\n\tseg: frame segmentation factor, each frame is segmented into " 
                 + "\n\t\tregions, this factor represents the percentage of the "  
                 + "\n\t\tmaximum number of possible regions"

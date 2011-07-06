@@ -116,11 +116,10 @@ using rraew;
          * exposure algorithm, can be "S" for spot or "P" for partial or "C" for 
          * electronic centric or "SG" for segmented image or "A" for average.
          * @param time it is the time between aew algorithms iterations
-         * @param fps is the minimum allowed frame rate
          * @param segment_factor a percentage of the maximun image divisions 
          */
         public int init_aew(string wb, string ae, string g, string meter, 
-            int time, int fps, int segment_factor, int width, int height, 
+            int time, int segment_factor, int width, int height, 
             int center_percentage) throws IOError
         {
             /** File descriptors information*/
@@ -211,7 +210,7 @@ using rraew;
             fd.owner_capture_fd = sensor_abstract.owner_capture_fd;
 
             rraew = create_rraew(wb_algo, ae_algo, meter_type, 
-                width, height, fps, segment_factor, center_percentage, gain_type, 
+                width, height, segment_factor, center_percentage, gain_type, 
                 &fd, &sensor, &interf);
 
             aew_running = true;
