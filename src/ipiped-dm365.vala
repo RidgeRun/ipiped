@@ -23,6 +23,20 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
     }
 
     /**
+     * Open previewer
+     * Open the video processor, obtain the correspondly file 
+     * descriptor */
+    private bool open_previewer(int *previewer_fd, char *owner_previewer_fd){
+        *previewer_fd = open("/dev/davinci_previewer", O_RDWR);
+        if (*previewer_fd < 0) {
+            Posix.stderr.printf("\n Failed to open dm365 previewer device file");
+            return false;
+        }
+        *owner_previewer_fd = 0;
+        return true;
+    }
+
+    /**
      * Configure the previewer mode with the default configuration
      * @param mode_s indicates if configure the previewer on continuos 
      * mode or single shot mode
@@ -195,13 +209,8 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
 
         cap.index = 0;
         if (*previewer_fd < 0) {
-            /* Open previewer */
-            *previewer_fd = open("/dev/davinci_previewer", O_RDWR);
-            if (*previewer_fd < 0) {
-                Posix.stderr.printf("\n Failed to open dm365 previewer device file");
+            if (!open_previewer(previewer_fd, owner_previewer_fd))
                 return false;
-            }
-            *owner_previewer_fd = 0;
         }
         /* Set operation mode */
         if (Posix.ioctl(*previewer_fd, PREV_ENUM_CAP, &cap) < 0) {
@@ -273,19 +282,13 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
     private bool get_digital_gain_i(int *previewer_fd, char *owner_previewer_fd,
         uint32 *red_gain, uint32 *green_gain, uint32 *blue_gain)
     {
-        Posix.stdout.printf("Digital gain\n");
         ModuleParam mod_param = ModuleParam();
         WhiteBalance wb = WhiteBalance();
         Cap cap =  Cap();
         cap.index = 0;
-        if (*previewer_fd<0) {
-            /* Open previewer */
-            *previewer_fd = open("/dev/davinci_previewer", O_RDWR);
-            if (*previewer_fd < 0) {
-                Posix.stderr.printf("\n Failed to open dm365 previewer device file");
+        if (*previewer_fd < 0) {
+            if (!open_previewer(previewer_fd, owner_previewer_fd))
                 return false;
-            }
-            *owner_previewer_fd = 0;
         }
         /* Set operation mode */
         if (Posix.ioctl(*previewer_fd, PREV_ENUM_CAP, &cap) < 0) {
@@ -342,6 +345,10 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
         cap.index =0 ;
         uint8 q4contr;
 
+        if (this.previewer_fd < 0) {
+            if (!open_previewer(&this.previewer_fd, &this.owner_previewer_fd))
+                return false;
+        }
         if (Posix.ioctl(this.previewer_fd , PREV_ENUM_CAP, &cap)<0) {
             if (debug)
                 Posix.stderr.printf("Ipiped:Error in Setting cap from driver\n");
@@ -352,8 +359,18 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
         strcpy(mod_param.version,cap.version);
         mod_param.module_id = cap.module_id;
 
-        if (bright > 0xFF) bright = 0xFF; 
-        if (contr > 15.94) contr = 15.94;
+        if (bright > 0xFF){
+            if (debug)
+                Posix.stdout.printf("Ipiped:Brightness value is greater than" + 
+                " 255. 255 will be written\n");
+            bright = 0xFF; 
+        }
+        if (contr > 15.94){
+            if (debug)
+                Posix.stdout.printf("Ipiped:Brightness value is greater than" + 
+                " 15.94. 15.94 will be written\n");
+            contr = 15.94;
+        }
         q4contr = (uint8)(contr * 16);
         lum_adj.brightness =(uchar)bright;
         lum_adj.contrast =(uchar)q4contr; 
@@ -384,12 +401,16 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
         Cap cap = Cap();
         cap.index =0 ;
 
-        if (Posix.ioctl(this.previewer_fd , PREV_ENUM_CAP, &cap)<0) {
-            if (debug)
-                Posix.stderr.printf("Ipiped:Error in Setting cap from driver\n");
-            return false;
+        if (this.previewer_fd < 0) {
+            if (!open_previewer(&this.previewer_fd, &this.owner_previewer_fd))
+                return false;
         }
 
+        if (Posix.ioctl(this.previewer_fd , PREV_ENUM_CAP, &cap)<0) {
+            if (debug)
+                Posix.stderr.printf("Ipiped:Error in getting cap from driver\n");
+            return false;
+        }
         strcpy(mod_param.version,cap.version);
         mod_param.module_id = PREV_LUM_ADJ;
         mod_param.len =(uint8)sizeof(LumAdj);
@@ -397,7 +418,7 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
 
         if (Posix.ioctl(this.previewer_fd , PREV_G_PARAM, &mod_param) < 0){
             if (debug)
-                Posix.stderr.printf("Ipiped:Error in Setting params from driver\n");
+                Posix.stderr.printf("Ipiped:Error in getting params from driver\n");
             Posix.close(this.previewer_fd );
             return false;
         }

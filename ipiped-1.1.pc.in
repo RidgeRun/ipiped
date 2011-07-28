@@ -1,0 +1,8 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+
+Name: IPIPE Daemon
+Description: Configure and Control Server
+Version: @VERSION@
+Requires: dbus-glib-1

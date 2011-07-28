@@ -293,20 +293,20 @@ public class Ipiped_mt9p031 : AbstcSensor{
     }
 
 
-    public bool get_exposure_time(out int exp_time) throws IOError{
+    public bool get_exposure_time(out uint exp_time) throws IOError{
         if (this.capture_fd < 0){
             if (open_sensor() < 0)
                 return false;
         }
-   
+
         if (get_exposure_time_i(&this.capture_fd, &this.owner_capture_fd, &exp_time) != 0) {
             Posix.stderr.printf("Error:\n Failed to get the exposure time\n");
             return false;
-        } 
-        
+        }
+
         return true;
     }
-    
+
 #if (RRAEW)
 
     /*Internal methods*/
@@ -353,7 +353,7 @@ public class Ipiped_mt9p031 : AbstcSensor{
         *hf = ctrl.value;
         return 0;
     }
-    
+
     /**
      * Get the pixel position for each color pattern
      * @param color_pattern, array that contains the pixel position

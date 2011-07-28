@@ -9,6 +9,7 @@ public class IpipeCommand:GLib.Object {
     public string name;
     public CmdFunc cmd_func;
     public string usage;
+    public string brief;
     public string doc;
     public string args;
 
@@ -22,11 +23,12 @@ public class IpipeCommand:GLib.Object {
      * @param _doc description of the command funcionality
      * @param _args explanation of the function's arguments
      */
-    public IpipeCommand(string _name, CmdFunc _cmd, string _usage, string _doc, 
-        string _args) {
+    public IpipeCommand(string _name, CmdFunc _cmd, string _usage, string _brief, 
+        string _doc, string _args) {
         this.name = _name;
         this.cmd_func = _cmd;
         this.usage = _usage;
+        this.brief = _brief;
         this.doc = _doc;
         this.args = _args;
     } 
@@ -35,6 +37,7 @@ public class IpipeCommand:GLib.Object {
         this.name = "";
         this.cmd_func = null;
         this.usage = "";
+        this.brief = "";
         this.doc = "";
         this.args = "";
     }
@@ -66,8 +69,9 @@ public class CommandManager:GLib.Object {
     } 
 
     public  void new_command(string _name, IpipeCommand.CmdFunc _cmdfunc,
-        string _usage, string _doc, string _args) {
-        IpipeCommand new_cmd = new IpipeCommand(_name, _cmdfunc, _usage, _doc, _args);
+        string _usage, string _brief, string _doc, string _args) {
+        IpipeCommand new_cmd = new IpipeCommand(_name, _cmdfunc, _usage, _brief,
+            _doc, _args);
         CmdMap += new_cmd;
         return;
     }
@@ -106,25 +110,26 @@ public class CommandManager:GLib.Object {
         for (ind = 0; ind < CmdMap.length; ind++) {
             if (args[1] == null) {
                 if (printed == 0)
-                    stdout.printf ("Request the syntax of an specific command with " +
-                        "\"help <command>\".\n" +
-                        "This is the list of supported commands:\n" +
-                        "\nCOMMANDS supported:\n\nCommand\t\t\t\tDescription\n\n");
+                    stdout.printf ("\nCOMMANDS supported:\n" +
+                    "Request the syntax of an specific command with " +
+                    "\"help [command]\".\nThis is the list of supported commands:\n" +
+                    "\nCommand\t\t\t\tDescription\n\n");
                 if (CmdMap[ind].name.length < 8) {
-                   stdout.printf("%s\t\t\t%s.\n", CmdMap[ind].name, 
-                        CmdMap[ind].doc);
+                   stdout.printf("%s\t\t\t", CmdMap[ind].name);
                 } else if (CmdMap[ind].name.length < 16){
-                    stdout.printf("%s\t\t%s.\n", CmdMap[ind].name, 
-                        CmdMap[ind].doc);
+                    stdout.printf("%s\t\t", CmdMap[ind].name);
                 } else {
-                   stdout.printf("%s\t%s.\n", CmdMap[ind].name,
-                        CmdMap[ind].doc);
+                   stdout.printf("%s\t", CmdMap[ind].name);
                 }
+                stdout.printf("%s.\n", CmdMap[ind].brief);
                 printed++;
             } else if (strcmp(args[1], CmdMap[ind].name) == 0){
                 stdout.printf ("\nCommand: %s\n", CmdMap[ind].name);
                 stdout.printf ("Syntax: %s\n", CmdMap[ind].usage); 
-                stdout.printf ("Description: %s\n", CmdMap[ind].doc);
+                stdout.printf ("Description: %s.\n", CmdMap[ind].brief);
+                if (CmdMap[ind].doc != ""){ 
+                    stdout.printf ("%s\n", CmdMap[ind].doc);
+                }
                 if (CmdMap[ind].args != ""){
                     stdout.printf ("Arguments: %s\n", CmdMap[ind].args);     
                 }

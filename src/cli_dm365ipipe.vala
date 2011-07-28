@@ -128,13 +128,13 @@ public class cli_dm365ipipe : AbstcCliRegister{
        double contrast;
 
        try {
-            if (ipipe.get_luminance_adj(out brightness, out contrast)) {
+            if (!ipipe.get_luminance_adj(out brightness, out contrast)) {
                 stderr.
                     printf("Error:\n Failed to get the luminant adjusment\n");
                 return -1;
             } else {
                 Posix.stdout.printf("Luminance adjustment: Brightness=%d," +
-                   " Contrast=%d\n", brightness, contrast);
+                   " Contrast=%f\n", brightness, contrast);
                 if (_debug)
                     stdout.printf("Ok.Get luminance adjusment\n");
                 return 0;
@@ -170,33 +170,37 @@ public class cli_dm365ipipe : AbstcCliRegister{
     /* Initialize the Command Array. */
     public override void registration(IpipeCli cli) throws IOError{
         cli.cmd.new_command("set-previewer-mode", cmd_set_previewer_mode, 
-            "set_previewer_mode <cont/one-shot>", "Configure previewer on "
-            + "continuous or one-shot mode", "\n\tcont: sets previewer on " 
-            + "continous mode\n\tone-shot: sets previewer on one shot mode");
+            "\033[1mset_previewer_mode\033[m <cont/one-shot>", 
+            "Configure previewer on continuous or one-shot mode", "", 
+            "\n\tcont: sets previewer on continous mode" 
+            + "\n\tone-shot: sets previewer on one shot mode");
         cli.cmd.new_command("set-bayer-pattern", cmd_set_color_pattern, 
-            "set-bayer-pattern <ptrn>","Sets R/Gr/Gb/B color pattern to the "
-            + "previewer", "\n\tThe argument ptrn is the specific color " 
-            + "pattern, \n\t\tthe options are: "
+            "\033[1mset-bayer-pattern\033[m ptrn","Sets R/Gr/Gb/B color pattern "
+            + "to the previewer", "", "\n\tThe argument ptrn is the specific " 
+            + "color pattern, \n\tthe options are: "
             + "\n\tGrRBGb: \n\t\tGr R\n\t\tB Gb\n\tBGbGrR: \n\t\tB Gb\n\t\tGr R"
             + "\n\tRGrGbB: \n\t\tR Gr\n\t\tGb B\n\tGbBRGr: \n\t\tGb B\n\t\tR Gr");
         cli.cmd.new_command("set-digital-gain", cmd_set_digital_gain, 
-            "set-digital-gain <R> <G> <B>", "Sets red (R), green (G) and blue" 
-            + " gains (G) on the ipipe", 
-            "\n\tEach gain component can range from 0 to 15.998 in steps of 1/512:" 
-            +"\n\tR: red gain\n\tG: green gain\n\tB: blue gain\n");
-        cli.cmd.new_command("get-digital-gain", cmd_get_digital_gain, "get-digital-gain",
-            "Returns the gain value for each color component(RGB)", "");
-        cli.cmd.new_command("set-luminance", cmd_set_lum_adj, "set-luminance <Br> <C>",
-            "Brightness(Br) and contrast(C) adjustment", "\n\tThis ajustment" 
+            "\033[1mset-digital-gain\033[m R G B", "Sets red (R), green (G)" 
+            + " and blue gains (G) on the ipipe",   
+            "\tEach gain component can range from 0 to 15.998 in steps of 1/512:", 
+            "\n\tR: red gain\n\tG: green gain\n\tB: blue gain\n");
+        cli.cmd.new_command("get-digital-gain", cmd_get_digital_gain, 
+            "\033[1mget-digital-gain\033[m",
+            "Returns the gain value for each color component(RGB)", "", "");
+        cli.cmd.new_command("set-luminance", cmd_set_lum_adj, 
+            "\033[1mset-luminance\033[m Br C",
+            "Brightness(Br) and contrast(C) adjustment", "\tThis ajustment " 
             +"is applied to the luminance(Y) component, using the following "
-            +"equation  Yctr_ brt = (Y x C) + Br "
-            +"\n\tBr: brightness offset value for ipipe's brightness control,"
+            +"equation  Yctr_ brt = (Y x C) + Br ",
+            "\n\tBr: brightness offset value for ipipe's brightness control,"
             +" it's an integer value that can range from 0 to 255"
-            +"\n\tCr: contrast multiplier coefficient, it's a float value" 
+            +"\n\tC: contrast multiplier coefficient, it's a float value" 
             +" that can range from 0 to 15.94");
-        cli.cmd.new_command("get-luminance", cmd_get_lum_adj, "get-luminance",
+        cli.cmd.new_command("get-luminance", cmd_get_lum_adj, 
+            "\033[1mget-luminance\033[m",
             "Returns the value of the Brightness(Br) and contrast(C) adjustment",
-            "");
+            "", "");
 
         ipipe = Bus.get_proxy_sync (BusType.SYSTEM, "com.ridgerun.ipiped",
                                                         "/com/ridgerun/ipiped/ipipe");

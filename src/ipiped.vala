@@ -25,6 +25,16 @@ using rraew;
         public AbstcSensor sensor_abstract;
         public signal void Error(string err_message);
 #if (RRAEW)
+        /** Struct that contains auto white balance configuration*/
+        awbConfiguration awb_config;
+        /** Flag that indicates if auto white balance is configured or not*/
+        bool awb_configured;
+        /** Struct that contains auto exposure configuration*/
+        aeConfiguration ae_config;
+         /** Flag that indicates if auto exposure's configuration status*/
+        bool ae_configured;
+        /** Struct that contains general aew configuration*/
+        aewConfiguration aew_config;
         /** Thread for aew*/
         unowned Thread<void*> thread;
         /** Flag to indicate if the aew thread is running*/
@@ -39,7 +49,8 @@ using rraew;
         /**
          * Create a new instance of a Ipipe daemon
          */
-        public Ipipe(string _sensor, string _video_processor, AbstcVideoProcessor _video_processor_abstract, 
+        public Ipipe(string _sensor, string _video_processor, 
+            AbstcVideoProcessor _video_processor_abstract, 
             AbstcSensor _sensor_abstract){
            /* Initialize private variables */
             initialized = false;
@@ -48,6 +59,8 @@ using rraew;
             video_processor_abstract=_video_processor_abstract;
             sensor_abstract=_sensor_abstract;
             this.debug = false;
+            this.ae_configured = false;
+            this.awb_configured = false;
         }
         /**
          * Destroy a instance of Ipipe 
@@ -75,20 +88,35 @@ using rraew;
             return true;
         }
 
+        /**
+         * get_sensor
+         * Return the sensor that is being used
+         */
         public string get_sensor() throws IOError{
             return sensor;
         }
 
+        /**
+         * get_video_processor
+         * Return the video processor that is being used*/
         public string get_video_processor() throws IOError{
             return video_processor;
         }
 
 #if (RRAEW)
+        /* aew_thread_func
+         * This function consists on a loop that iterates
+         * the execution of the rraew adjustments.
+         * */
         private void* aew_thread_func(){
             try {
+                /* When the flag aew_running is false
+                 * stop aew*/
                 while (aew_running) {
+                    /*Wait the configured time between aew iterations*/
                     Thread.usleep(wait_time);
                     if (run_rraew(rraew)<0){
+                        /*When an error occurs close aew*/
                         clean_close = false;
                         close_aew();
                     }
@@ -99,109 +127,282 @@ using rraew;
             return null;
         }
 
+        /**
+         * set_auto_exposure_configuration
+         * Initialize the ae struct for the auto exposure configuration of 
+         * librraew.
+         * @param ae string that chooses the auto exposure algorithm, can be 
+         * "electronic-centric" or "none" (not apply an auto exposure).
+         * @param meter string that chooses the metering system for the auto 
+         * exposure algorithm, can be "partial", "center-weigthed", "segmented"
+         * or "average"
+         * @param rect_percentage defines the percentage of the image width 
+         *  and height to be used as the center size. Default: 40
+         * @param xrect x coordinate for the center point of the rectangle
+         * of interest.
+         * @param yrect y coordinate for the center point of the rectangle
+         * of interest.
+         */
+        public int set_auto_exposure_configuration(string ae, string meter, 
+            int rect_percentage, int xrect, int yrect) throws IOError{
 
+            this.ae_config = aeConfiguration();
+
+             /* Define the ae algorithm*/
+            if (ae == "electronic-centric")
+                ae_config.algorithm = ExposureAlgo.EC;
+            else if(ae == "none"){
+                ae_config.algorithm = ExposureAlgo.NONE;
+                this.ae_configured = true;
+                return 0;
+            } else {
+                Posix.stderr.printf("\nIpiped:Invalid auto exposure algorithm\n");
+                return -1;
+            }
+
+            /* Define the metering method*/
+            if (meter == "partial")
+                ae_config.meter_type = MeteringType.PARTIAL_AREA;
+            else if (meter == "weighted")
+                ae_config.meter_type = MeteringType.RECT_WEIGHTED;
+            else if (meter == "average")
+                ae_config.meter_type = MeteringType.AVERAGE;
+            else if (meter == "segmented")
+                ae_config.meter_type = MeteringType.SEGMENT;
+            else{
+                Posix.stderr.printf("\nIpiped:Invalid metering type\n");
+                return -1;
+            }
+            /* Only the metering systems partial, rectangular weighted and 
+             * average require the definition of the rectangle of interest*/
+            if ((ae_config.meter_type == MeteringType.PARTIAL_AREA) || 
+                (ae_config.meter_type == MeteringType.RECT_WEIGHTED) || 
+                (ae_config.meter_type == MeteringType.AVERAGE)){
+                
+                /*Sets the center point*/
+                ae_config.rect_center_point.x = xrect;
+                ae_config.rect_center_point.y = yrect;
+                
+                /* The point (-1, -1) es used as identifier for the 
+                 * center of the image. So the auto exposure is 
+                 * configured to center the rectangle*/
+                if ((xrect == -1) && (yrect == -1)){
+                    ae_config.rect_center_point.centered = 1;
+                    ae_config.rect_center_point.x = 0;
+                    ae_config.rect_center_point.y = 0;
+                }
+                /*Check percentage limits*/
+                if ((rect_percentage > 100)|| (rect_percentage) < 1) {
+                    Posix.stderr.printf("\nIpiped: rect_pecentage must be" + 
+                        " between 1 and 100\n");
+                    return -1;
+                } 
+                ae_config.rect_percentage = rect_percentage;
+            }
+            this.ae_configured = true;
+            return 0;
+        }
+
+        /**
+         * set_auto_white_balance_configuration
+         * Initialize the awb struct for the auto white balance configuration of 
+         * librraew.
+         * @param wb string that chooses the auto white balance algorithm, 
+         * can be "gray-world", "white-patch", "white-patch2"  or "none" (not 
+         * apply an auto white balance).
+         * @param g string that chooses the gain type, can be "sensor" for sensor 
+         * gain or "digital" for digital gain on the SOC.
+         */
+        public int set_auto_white_balance_configuration(string wb, string g) 
+            throws IOError{
+
+            this.awb_config = awbConfiguration();
+
+            /* Define the awb algorithm*/
+            if (wb == "white-patch")
+                awb_config.algorithm = WhiteBalanceAlgo.WHITE_PATCH;
+            else if (wb == "white-patch2")
+                awb_config.algorithm = WhiteBalanceAlgo.WHITE_PATCH_2;
+            else if (wb == "gray-world")
+                awb_config.algorithm = WhiteBalanceAlgo.GRAY_WORLD;
+            else if (wb == "none") {
+                awb_config.algorithm = WhiteBalanceAlgo.NONE;
+                this.awb_configured = true;
+                return 0;
+            } else{
+                Posix.stderr.printf("\nIpiped:Invalid white-balance algorithm\n");
+                return -1;
+            }
+            
+            /* Define the gain module to be used*/
+            if (g == "sensor")
+                awb_config.gain_type = GainType.SENSOR;
+            else if (g == "digital")
+                awb_config.gain_type = GainType.DIGITAL;
+            else if (g == "default"){
+                /*Digital is the default gain*/
+                awb_config.gain_type = GainType.DIGITAL;
+            } else {
+                Posix.stderr.printf("\nIpiped:Invalid gain type\n");
+                return -1;
+            }
+            this.awb_configured = true;
+            return 0;
+        }
+
+        /**
+         * get_auto_exposure_configuration
+         * Return current auto exposure's configuration
+         */
+        public int get_auto_exposure_configuration(out string ae, out string meter, 
+            out int rect_percentage, out int xrect, out int yrect) throws IOError{
+
+            if (ae_config.algorithm == ExposureAlgo.EC)
+                ae = "electronic-centric";
+            else 
+                ae = "none";
+
+            if ( ae_config.meter_type == MeteringType.PARTIAL_AREA )
+                meter = "partial";
+            else if (ae_config.meter_type == MeteringType.RECT_WEIGHTED)
+                meter = "weighted";
+            else if (ae_config.meter_type == MeteringType.AVERAGE)
+                meter = "average";
+            else if (ae_config.meter_type == MeteringType.SEGMENT)
+                meter = "segmented";
+
+            rect_percentage = ae_config.rect_percentage;
+
+            if (ae_config.rect_center_point.centered == 1){
+                xrect = -1;
+                yrect = -1;
+            } else {
+                xrect = (int)ae_config.rect_center_point.x;
+                yrect = (int)ae_config.rect_center_point.y;
+            }
+
+            if (!ae_configured)
+                return -1;
+            else
+                return 0;
+        }
+        /**
+         * get_auto_white_balance_configuration
+         * Return the current configuration of the awb
+         */
+        public int get_auto_white_balance_configuration(out string wb, 
+            out string g) throws IOError{
+            if (!awb_configured){
+                wb = "";
+                g = "";
+                return -1;
+            }
+            if (awb_config.algorithm == WhiteBalanceAlgo.WHITE_PATCH)
+                wb = "white-patch";
+            else if (awb_config.algorithm == WhiteBalanceAlgo.WHITE_PATCH_2)
+                wb = "white-patch2";
+            else if (awb_config.algorithm == WhiteBalanceAlgo.GRAY_WORLD)
+                wb = "gray-world";
+            else if (awb_config.algorithm == WhiteBalanceAlgo.NONE )
+                wb = "none";
+
+            if (awb_config.gain_type == GainType.SENSOR)
+                g = "sensor";
+            else if (awb_config.gain_type == GainType.DIGITAL)
+                g = "digital";
+
+            return 0;
+        }
+
+        /**
+         * get_aew_status
+         * Return the current configuration of the rraew library
+         */
+        public bool get_aew_status(out bool awb_config, out bool ae_config, 
+            out int time, out int width, out int height, 
+            out int segment_factor) throws IOError{
+
+            awb_config = awb_configured;
+            ae_config = ae_configured;
+            time = wait_time;
+            width = aew_config.width;
+            height = aew_config.height;
+            segment_factor = aew_config.segmentation_factor;
+            return aew_running;
+        }
+
+        /**
+         * get_ae_rectangle_coordinates
+         * Get the rectangle of interest's coordinates, only if aew is running
+         * and return it.
+         */
+        public int get_ae_rectangle_coordinates(out uint right, out uint left,
+            out uint top, out uint bottom) throws IOError{
+
+            if (aew_running) {
+                if (get_rectangle_coordinates(rraew, &right, &left, 
+                    &top, &bottom) == 0){
+                    return 0;
+                }
+            }
+            right = 0;
+            left = 0;
+            top = 0;
+            bottom = 0;
+            return -1;
+        }
         /**
          * AEW Algorithm initialization
          * Uses the parameters given by the user to configure the aew library, 
          * sets the functions to access the sensor and the dm365 interface 
          * (vpfe ipipe). Creates an aew structure and a thread for the aew loop
-         * @param wb string that chooses the auto white balance algorithm, 
-         * can be "G" for gray world or "W" for white balance  or "N" to do not 
-         * apply an auto white balance.
-         * @param ae string that chooses the auto exposure algorithm, can be 
-         * "EC" for electronic centric or "N" to do not apply an auto exposure.
-         * @param g string that chooses the gain type, can be "S" for sensor 
-         * gain or "D" for digital gain.
-         * @param meter string that chooses the metering system for the auto 
-         * exposure algorithm, can be "S" for spot or "P" for partial or "C" for 
-         * electronic centric or "SG" for segmented image or "A" for average.
          * @param time it is the time between aew algorithms iterations
+         * @param width image width
+         * @param height image height
          * @param segment_factor a percentage of the maximun image divisions 
          */
-        public int init_aew(string wb, string ae, string g, string meter, 
-            int time, int segment_factor, int width, int height, 
-            int center_percentage) throws IOError
+        public int init_aew(int time, int width, int height, 
+            int segment_factor) throws IOError
         {
             /** File descriptors information*/
             FileDescriptors fd = FileDescriptors();
-
             wait_time = time;
-            WhiteBalanceAlgo wb_algo;
-            ExposureAlgo ae_algo;
-            GainType gain_type;
-            MeteringType meter_type;
             Sensor sensor = Sensor();
             Interface interf = Interface();
+            aew_config = aewConfiguration();
 
+            /* If an instance of librraew is running close it 
+             * before create a new one */
             if(aew_running) {
-                Posix.stderr.printf("The AEW algorithm is alreadty being " + 
-                    "executed. Please finish the current session\n by using " + 
-                    "close-aew. Then you will be able to start a new one\n");
-                return -1;
+                close_aew();
+                /*Wait for aew engine disable*/
+                usleep(300000);
             }
 
+            /* Defining general rraew params */
+            aew_config.height = height;
+            aew_config.width = width;
+            aew_config.segmentation_factor = segment_factor;
+
+            /* Check params limits */
             if (time > 1000000) {
                 Posix.stderr.printf("\nIpiped:Wait time is greater than the maximum\n");
                 return -1;
             }
 
-             if ((segment_factor > 100)|| (segment_factor) < 1) {
+            if ((segment_factor > 100)|| (segment_factor) < 1) {
                 Posix.stderr.printf("\nIpiped:Segmentation factor must be between 1 and 100\n");
                 return -1;
             } 
 
-            /* Define the gain module to be used*/
-            if (g == "S")
-                gain_type = GainType.SENSOR;
-            else if (g == "D")
-                gain_type = GainType.DIGITAL;
-            else {
-                Posix.stderr.printf("\nIpiped:Invalid gain type\n");
-                return -1;
-            }
-            /* Define the ae algorithm*/
-            if (ae == "EC")
-                ae_algo = ExposureAlgo.EC;
-            else if(ae == "N")
-                ae_algo = ExposureAlgo.NONE;
-            else {
-                Posix.stderr.printf("\nIpiped:Invalid auto exposure algorithm\n");
-                return -1;
-            }
-            /* Define the awb algorithm*/
-            if (wb == "W")
-                wb_algo = WhiteBalanceAlgo.WHITE_PATCH;
-            else if (wb == "W2")
-                wb_algo = WhiteBalanceAlgo.WHITE_PATCH_2;
-            else if (wb == "G")
-                wb_algo = WhiteBalanceAlgo.GRAY_WORLD;
-            else if (wb == "N")
-                wb_algo = WhiteBalanceAlgo.NONE;
-            else{
-                Posix.stderr.printf("\nIpiped:Invalid white-balance algorithm\n");
-                return -1;
-            }
-            /* Define the metering method*/
-            if (meter == "P")
-                meter_type = MeteringType.PARTIAL_AREA;
-            else if (meter == "C")
-                meter_type = MeteringType.CENTER_WEIGHTED;
-            else if (meter == "A")
-                meter_type = MeteringType.AVERAGE;
-            else if (meter == "SG"){
-                meter_type = MeteringType.SEGMENT;
-            }else{
-                Posix.stderr.printf("\nIpiped:Invalid metering type\n");
-                return -1;
-            }
-
-            /* Sensor information */
+            /* Get sensor information */
             sensor_abstract.get_sensor_data(&sensor);
+            /* Get video processor information */
             if (!video_processor_abstract.get_video_processor_data(&interf)) {
                 Posix.stderr.printf ("Can't get video processor data\n");
                 return -1;
             }
-
+            /* Defining ipiped file descriptors */
             fd.previewer_fd = video_processor_abstract.previewer_fd;
             fd.owner_previewer_fd = video_processor_abstract.owner_previewer_fd;
             fd.aew_fd = video_processor_abstract.aew_fd;
@@ -209,12 +410,19 @@ using rraew;
             fd.capture_fd = sensor_abstract.capture_fd;
             fd.owner_capture_fd = sensor_abstract.owner_capture_fd;
 
-            rraew = create_rraew(wb_algo, ae_algo, meter_type, 
-                width, height, segment_factor, center_percentage, gain_type, 
-                &fd, &sensor, &interf);
-
+            /* Create rraew handler */
+            rraew = create_rraew(&awb_config, &ae_config, &aew_config, 
+                &sensor, &interf, &fd);
+            if (rraew == null){
+                Posix.stderr.printf ("Can't create rraew handler\n");
+                Posix.stdout.printf ("Can't create rraew handler\n");
+                return -1;
+            }
+            /* Enable aew flag */
             aew_running = true;
             clean_close = true;
+
+            /* Create a new thread for the aew loop*/
             if (!Thread.supported ()) {
                     error ("Cannot run without thread support");
             }
@@ -230,11 +438,18 @@ using rraew;
          * End AEW Algorithm, disable AEW engine
          */
         public void close_aew() throws IOError{
+            /*Clean the flag that indicates aew 
+             * is running*/
             aew_running = false;
+            /*Check if the aew wasn't close by  
+             *librraew error*/
             if(clean_close) {
+                /*join the thread*/
                 thread.join();
                 clean_close = false;
             }
+            /*If the rraew handler was initialized
+             *destroy it*/
             if (rraew != null){
                 destroy_rraew(rraew);
                 rraew = null;

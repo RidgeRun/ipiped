@@ -7,7 +7,7 @@ public interface Imt9p031: Object{
         out double blue_gain, out double green_gain) throws IOError;
     public abstract int sensor_flip_vertically(string state) throws IOError;
     public abstract int sensor_flip_horizontally(string state) throws IOError;
-    public abstract bool get_exposure_time(out int exp_time) throws IOError;
+    public abstract bool get_exposure_time(out uint exp_time) throws IOError;
     public abstract int set_exposure_time(uint _exp_time) throws IOError;
 }
 
@@ -146,7 +146,7 @@ public class cli_mt9p031 : AbstcCliRegister{
 
     public int cmd_get_exposure_time( string[]? args) {
         try {
-            int exp_time = 0;
+            uint exp_time = 0;
             if (!sensor.get_exposure_time(out exp_time)) {
                 stderr.printf("Error:\n Failed to set exposure time\n");
                 return -1;
@@ -165,28 +165,33 @@ public class cli_mt9p031 : AbstcCliRegister{
 
     /* Initialize the Command Array. */
     public override void registration(IpipeCli cli) throws IOError{
-        cli.cmd.new_command("flip-vertical", cmd_flip_vertically, "fip-vertical <state>",
-            "Flips the image vertically(on the sensor)", "state indicates the "
+        cli.cmd.new_command("flip-vertical", cmd_flip_vertically, 
+            "\033[1mfip-vertical\033[m state",
+            "Flips the image vertically(on the sensor)", "", "state indicates the "
              + "status of the vertical flip.\n\t The options are \"ON\" or "
              + " \"OFF\"");
-        cli.cmd.new_command("flip-horizontal", cmd_flip_horizontally, "flip-horizontal" 
-            + "<state>", "Flips the image horizontally (on the sensor)",
+        cli.cmd.new_command("flip-horizontal", cmd_flip_horizontally, 
+            "\033[1mflip-horizontal\033[m state", 
+            "Flips the image horizontally (on the sensor)", "",
             "state indicates the status of the horizontal flip." 
             + "\n\t The options are \"ON\" or \"OFF\"");
-        cli.cmd.new_command("set-exposure", cmd_set_exposure_time, "set-exposure <T[us]>",
-            "Sets the effective shutter time  of the sensor for the light " 
-            + "integration", "T: effective shutter time in micro-seconds");
-        cli.cmd.new_command("get-exposure", cmd_get_exposure_time, "get-exposure",
-            "Gets the exposure time of the sensor in us","");
+        cli.cmd.new_command("set-exposure", cmd_set_exposure_time, 
+            "\033[1mset-exposure\033[m T<us>",
+            "Sets the effective shutter time  of the sensor for the light "
+            + "integration", "","\n\tT: effective shutter time in micro-seconds");
+        cli.cmd.new_command("get-exposure", cmd_get_exposure_time, 
+            "\033[1mget-exposure\033[m",
+            "Gets the exposure time of the sensor in us","", "");
         cli.cmd.new_command("set-sensor-gain", cmd_set_sensor_gain, 
-            "set-sensor-gain <R> <G> <B>",
+            "\033[1mset-sensor-gain\033[m R G B",
             "Sets red(R), green(G) and blue(B) gain directly on the sensor",
-            "\n\tEach gain component can range from 0 to 128 in steps of "
+            "\tEach gain component can range from 0 to 128 in steps of "
             + "\n\t\t0.125 if gain between 1 and 4\n\t\t0.250 if gain " 
-            +"between 4.25 and 8\n\t\t1.000 if gain betwewn 8 and 128" 
-            +"\n\tR: red gain\n\tG: green gain\n\tB: blue gain\n");
-        cli.cmd.new_command("get-sensor-gain", cmd_get_sensor_gain, "get-sensor-gain",
-            "Gets sensor red(R), green(G) and blue(B)", ""); 
+            +"between 4.25 and 8\n\t\t1.000 if gain betwen 8 and 128", 
+            "\n\tR: red gain\n\tG: green gain\n\tB: blue gain\n");
+        cli.cmd.new_command("get-sensor-gain", cmd_get_sensor_gain, 
+            "\033[1mget-sensor-gain\033[m",
+            "Gets sensor red(R), green(G) and blue(B)", "", ""); 
         sensor = Bus.get_proxy_sync (BusType.SYSTEM, "com.ridgerun.ipiped",
                                                         "/com/ridgerun/ipiped/ipipe");
         return;

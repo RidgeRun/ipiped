@@ -15,10 +15,23 @@ public interface ICliIpipe: Object{
     public abstract bool ping() throws IOError;
     public abstract string get_video_processor() throws IOError;
     public abstract string get_sensor() throws IOError;
-    public abstract int init_aew(string wb, string ae, string g, string meter, 
-        int time, int segment_factor, int width, int height, 
-        int center_percentage) throws IOError;
+    public abstract int init_aew(int time, int width, int height, 
+        int segment_factor) throws IOError;
+    public abstract bool get_aew_status(out bool awb_config, out bool ae_config,
+        out int time, out int width, out int height, out int segment_factor) 
+        throws IOError;
+    public abstract int set_auto_exposure_configuration(string ae, string meter, 
+        int rect_percentage, int xrect, int yrect) throws IOError;
+    public abstract int get_auto_exposure_configuration(out string ae, 
+        out string meter, out int rect_percentage, out int xrect, 
+        out int yrect) throws IOError;
+    public abstract int set_auto_white_balance_configuration(string wb, 
+        string g) throws IOError;
+    public abstract int get_auto_white_balance_configuration(out string wb, 
+        out string g) throws IOError;
     public abstract void close_aew() throws IOError;
+    public abstract int get_ae_rectangle_coordinates(out uint right, 
+        out uint left, out uint top, out uint bottom) throws IOError;
 }
 
 public class IpipeCli: GLib.Object {
@@ -192,23 +205,33 @@ public class IpipeCli: GLib.Object {
     private int cli_ini_aew(string[]? args) {
 
     #if (RRAEW)
-        int i=0;
-        // Check if there are missing args 
-        while (i < 10) { 
-            if (args[i] == null) {
-                Posix.stdout.printf("Error:\nMissing argument.Execute:'help <command>'\n");
-                return -1;
-            }
+        int i =0;
+        const uint min_args = 3, max_args = 4;
+        int wait_time, width, height, segment_factor = 100;
+        /*Get the number of input arguments*/
+        while (args[i + 1] != null){
             i++;
         }
-        int wait_time = int.parse(args[5]);
-        int width = int.parse(args[7]);
-        int height = int.parse(args[8]);
-        int segment_factor = int.parse(args[6]);
-        int center_percentage = int.parse(args[9]);
+
+        if ( i < min_args){
+            Posix.stdout.printf("Error:\nMissing argument.Execute:'help <command>'\n");
+            return -1;
+        }
+
+        if ( i > max_args){
+            Posix.stdout.printf("Error:\nMore arguments than required.Execute:'help <command>'\n");
+            return -1;
+        }
+
+        wait_time = int.parse(args[1]);
+        width = int.parse(args[2]);
+        height = int.parse(args[3]);
+        if (i == max_args) {
+            segment_factor = int.parse(args[4]);
+        }
+
         try {
-            int ret = ipipe.init_aew(args[1], args[2], args[3], args[4], wait_time, 
-                segment_factor, width, height, center_percentage);
+            int ret = ipipe.init_aew(wait_time, width, height, segment_factor);
             if (ret < 0) {
                 Posix.stderr.printf("Error:\n Failed to initialize aew\n");
                 return -1;
@@ -228,9 +251,200 @@ public class IpipeCli: GLib.Object {
     #endif
     }
 
+#if (RRAEW)
+    private int cli_get_aew(string[]? args) {
+        bool awb_config, ae_config;
+        int time, width, height, segment_factor;
+        bool running;
+        try {
+            running = ipipe.get_aew_status(out awb_config, out ae_config, 
+                out time, out width, out height, out segment_factor);
 
-   private int cli_stop_aew(string[]? args) {
-   #if (RRAEW)
+            Posix.stdout.printf("\033[1mAEW Configuration\033[m\n");
+            if (awb_config){
+                Posix.stdout.printf("-> Auto white balance is configured\n");
+            } else {
+                Posix.stdout.printf("-> Auto white balance is not configured\n");
+            }
+
+            if (ae_config){
+                Posix.stdout.printf("-> Auto exposure is configured\n");
+            } else {
+                Posix.stdout.printf("-> Auto exposure is not configured\n");
+            }
+
+            if (!running){
+                Posix.stdout.printf("-> aew is stopped\n");
+            } else {
+                Posix.stdout.printf("-> Time between iterations: %i us\n", time);
+                Posix.stdout.printf("-> Image width: %i\n", width);
+                Posix.stdout.printf("-> Image height: %i\n", height);
+                Posix.stdout.printf("-> Segmentation: %i%%\n", segment_factor);
+            }
+        }
+        catch(Error e) {
+            Posix.stderr.printf("Error:\nFailed to get video processor\n");
+            return -1;
+        }
+        return 0;
+    }
+    private int cli_get_awb(string[]? args) {
+        string wb, g;
+        int ret;
+        try {
+            ret = ipipe.get_auto_white_balance_configuration(out wb, out g);
+            if (ret == -1 ){
+                Posix.stdout.printf("-> Auto white balance is not configured\n");
+            } else {
+                Posix.stdout.printf("\033[1mAuto White Balance Configuration\033[m\n");
+                Posix.stdout.printf("-> Algorithm: %s\n", wb);
+                Posix.stdout.printf("-> Gain type: %s\n", g);
+            }
+        }
+        catch(Error e) {
+            Posix.stderr.printf("Error:\nFailed to get auto white balance" + 
+                " configuration\n");
+            return -1;
+        }
+        return 0;
+    }
+    private int cli_get_ae(string[]? args) {
+        string ae, meter;
+        int rect_percentage, xrect, yrect;
+        int ret;
+        try {
+            ret = ipipe.get_auto_exposure_configuration(out ae, out meter, 
+            out rect_percentage, out xrect, out yrect);
+            if (ret == -1 ){
+                Posix.stdout.printf("-> Auto exposure is not configured\n");
+            } else {
+                Posix.stdout.printf("\033[1mAuto Exposure Configuration\033[m\n");
+                Posix.stdout.printf("-> Algorithm: %s\n", ae);
+                Posix.stdout.printf("-> Metering system: %s\n", meter);
+                Posix.stdout.printf("-> Rectangle area percentage: %i%%\n", rect_percentage);
+                Posix.stdout.printf("-> Rectangle center point: (%i, %i)\n", xrect, yrect);
+            }
+        }
+        catch(Error e) {
+            Posix.stderr.printf("Error:\nFailed to get auto exposure configuration\n");
+            return -1;
+        }
+        return 0;
+    }
+
+    private int cli_get_rect(string[]? args) {
+        uint right, left, top, bottom;
+        int ret;
+        try {
+            ret = ipipe.get_ae_rectangle_coordinates(out right, out left,
+                out top, out bottom);
+            if (ret == -1 ){
+                Posix.stdout.printf(" Failed to get rectangle. The aew isn't\n" 
+                    + " initialized or the selected auto exposure metering\n" 
+                    + " system doesn't use the rectangle of interest\n");
+            } else {
+                Posix.stdout.printf("- top-left point: (%u, %u)\n", left, top);
+                Posix.stdout.printf("- botton-right point: (%u, %u)\n", right, bottom);
+                Posix.stdout.printf("- width: %u\n", right - left);
+                Posix.stdout.printf("- height: %u\n", bottom - top);
+            }
+        }
+        catch(Error e) {
+            Posix.stderr.printf("Error:\nFailed to get rectangle coordinates\n");
+            return -1;
+        }
+        return 0;
+    }
+
+    private int cli_set_awb(string[]? args) {
+
+        int i = 0;
+        const uint min_args = 1, max_args = 2;
+        string gain;
+        /*Get the number of input arguments*/
+        while (args[i + 1] != null){
+            i++;
+        }
+
+        if ( i < min_args){
+            Posix.stdout.printf("Error:\nMissing argument.Execute:'help <command>'\n");
+            return -1;
+        }
+
+        if ( i > max_args){
+            Posix.stdout.printf("Error:\nMore arguments than required.Execute:'help <command>'\n");
+            return -1;
+        }
+
+        if (args[2] == null)
+            gain = "default";
+        else 
+            gain = args[2];
+
+        try {
+            int ret = ipipe.set_auto_white_balance_configuration(args[1], gain);
+            if (ret < 0) {
+                Posix.stderr.printf("Error:\n Failed to configure auto white balance\n");
+                return -1;
+            } else {
+                if (_debug)
+                    Posix.stdout.printf("Ok.\n");
+                return 0;
+            }
+        }
+        catch(Error e) {
+            Posix.stderr.printf("Fail to execute command:%s\n", e.message);
+            return -1;
+        }
+    }
+    
+    private int cli_set_ae(string[]? args) {
+
+        int i = 0;
+        const uint min_args = 2, max_args = 5;
+        int rect_percentage = 40, xrect = -1, yrect = -1;
+        /*Get the number of input arguments*/
+        while (args[i + 1] != null){
+            i++;
+        }
+
+        if ( i < min_args){
+            Posix.stdout.printf("Error:\nMissing argument.Execute:'help <command>'\n");
+            return -1;
+        }
+
+        if ( i > max_args){
+            Posix.stdout.printf("Error:\nMore arguments than required. Execute:'help <command>'\n");
+            return -1;
+        }
+        if (args[3] != null){
+            rect_percentage = int.parse(args[3]);
+
+            if (i == max_args){
+                xrect = int.parse(args[4]);
+                yrect = int.parse(args[5]);
+            }
+        }
+        try {
+            int ret = ipipe.set_auto_exposure_configuration(args[1], args[2], 
+                rect_percentage, xrect, yrect);
+            if (ret < 0) {
+                Posix.stderr.printf("Error:\n Failed to configure auto exposure\n");
+                return -1;
+            } else {
+                if (_debug)
+                    Posix.stdout.printf("Ok.\n");
+                return 0;
+            }
+        }
+        catch(Error e) {
+            Posix.stderr.printf("Fail to execute command:%s\n", e.message);
+            return -1;
+        }
+    }
+#endif
+    private int cli_stop_aew(string[]? args) {
+#if (RRAEW)
         try {
             ipipe.close_aew();
             if (_debug)
@@ -241,10 +455,10 @@ public class IpipeCli: GLib.Object {
             Posix.stderr.printf("Fail to execute command:%s\n", e.message);
             return -1;
         }
-    #else
+#else
         Posix.stdout.printf("\nAEW is not supported because ipipe was compiled without librraew\n\n");
         return 0;
-    #endif
+#endif
     }
 
     private int cli_exit(string[]? args) {
@@ -256,59 +470,108 @@ public class IpipeCli: GLib.Object {
 
     /* Initialize the Command Array. */
     private void initialize_cmd_array() {
-        cmd.new_command("help", cmd.command_help, "help [<command>]",
+        cmd.new_command("help", cmd.command_help, "\033[1mhelp\033[m [command]",
             "Displays the help text for all the possible commands or a specific "
-            + "command", ""); 
-        cmd.new_command("set-debug", cli_enable_debug, "set_debug <true/false>", 
-            "Enable/Disable debug messages", "\n\ttrue: enables debug, " 
-            + "\n\tfalse: disables debug" );
-        cmd.new_command("init-aew", cli_ini_aew, "init-aew <WB> <AE> <G> <EM> " 
-            + "<T[us]> <seg> <width> <height> <center_percentage>",
-                "Initialize AEW algorithms",
-            "\n\tWB: white balance algorithm, the options are:"
-                + "\n\t\tG -for gray world algorithm" 
-                + "\n\t\tW -for retinex algorithm"
-                + "\n\t\tW2 -for variant of retinex algorithm"
-                + "\n\t\tN -for none" 
-            + "\n\tAE: auto exposure algorithm, the options are" 
-                + "\n\t\tEC -for electronic centric"
-                + "\n\t\tN -for none"  
-            + "\n\tG: gain type, the options are: " 
-                + "\n\t\tS -to use the sensor gain "  
-                + "\n\t\tD -to use the digital" 
-            + "\n\tEM: exposure metering method, the options are:" 
-                + "\n\t\tP -for partial metering that take into account the light " 
-                + "\n\t\tinformation of a portion in the center and the rest of " 
-                + "\n\t\tthe frame is ignored. The size  of the center depends of "
-                + "\n\t\tof the parameter center_percentage"
-                + "\n\t\tC -for center weighted metering that take into account " 
-                + "\n\t\tthe light information coming from the entire frame with " 
-                + "\n\t\temphasis placed on the center area" 
-                + "\n\t\tA -for average metering that take into account the light " 
-                + "\n\t\tinformation from the entire frame without weighting"  
-                + "\n\t\tSG -for segmented metering that divides the frame "  
-                + "\n\t\ton 6 pieces and weighting them to avoid backlighting" 
-            + "\n\tT: wait time in us, specifies the time between " 
+            + "command", "", ""); 
+        cmd.new_command("set-debug", cli_enable_debug, "\033[1mset-debug\033[m"
+            +" <true/false>", "Enable/Disable debug messages","",
+            "\n\ttrue: enables debug, \n\tfalse: disables debug");
+        cmd.new_command("shell", cli_shell, "\033[1mshell\033[m \"shell_cmd\"",
+            "Execute a shell command(shell_cmd) using interactive console","","");
+        cmd.new_command("ping", cli_ping, "\033[1mping\033[m", 
+            "Show if ipipe-daemon is alive", "", "");
+        cmd.new_command("quit", cli_exit, "\033[1mquit\033[m", 
+            "Quit from the interactive console", "", "");
+        cmd.new_command("exit", cli_exit, "\033[1mexit\033[m", 
+            "Exit from the interactive console", "", "");
+        cmd.new_command("get-video-processor", cli_get_video_processor, 
+            "\033[1mget-video-processor\033[m", "Show the video processor that" 
+            + " is being used", "", "");
+        cmd.new_command("get-sensor", cli_get_sensor, "\033[1mget-sensor\033[m", 
+            "Show the sensor that is being used","", "");
+        cmd.new_command("run-config-script", cli_run_config_script, 
+            "\033[1mrun-config-script script\033[m", 
+            "Execute a group of ipipe-client commands", "",
+            "\n\tscript: the name of the script");
+#if (RRAEW)
+        cmd.new_command("set-awb", cli_set_awb, "\033[1m set-awb \033[m algorithm [gain]", 
+            "Set the configuration of auto white balance(awb)", 
+            "\tYou can configure the auto white balance whenever you want but" 
+            + "\n\tthe changes will be applied the next time that you run init-aew."
+            + "\n\tIf awb isn't configured, none auto-white balance will be applied" 
+            + "\n\tto the video.",
+            "\n\talgorithm: white balance algorithm, the options are:"
+                + "\n\t\tgray-world -for gray world algorithm" 
+                + "\n\t\twhite-patch -for retinex algorithm"
+                + "\n\t\twhite-patch2 -for variant of retinex algorithm"
+                + "\n\t\tnone -for none" 
+            + "\n\tgain: gain type, the options are: " 
+                + "\n\t\tsensor -to use the sensor gain "  
+                + "\n\t\tdigital -to use the digital" );
+        cmd.new_command("set-ae", cli_set_ae, "\033[1m set-ae \033[m algorithm metering"
+            + " [rect_percentage] [xrect] [yrect] ", 
+            "Set the configuration of auto exposure", 
+            "\tYou can configure the auto exposure whenever you want but " 
+            + "\n\tthe changes will be applied the next time that you run init-aew."
+            + "\n\tIf it is not configured, none auto-exposure will be applied to " 
+            + "\n\tthe video",  
+            "\n\talgorithm: auto exposure algorithm, the options are" 
+                + "\n\t\telectronic-centric -for electronic centric"
+                + "\n\t\tnone -for none"
+            + "\n\tmetering: exposure metering method, the options are:" 
+                + "\n\t\tpartial -for partial metering that take into account " 
+                + "\n\t\t\tthe light information of a portion of the frame"  
+                + "\n\t\t\t(rectangle of interest) and the rest of the frame"  
+                + "\n\t\t\tis ignored. The size  of the rectangle of interest "  
+                + "\n\t\t\tdepends on the rect_percentage parameter and its " 
+                + "\n\t\t\tposition depends on the rect coordinates (xrect, yrect)"
+                + "\n\t\tweighted -for rectangle weighted metering that take "  
+                + "\n\t\t\tinto account the light information coming from the "  
+                + "\n\t\t\tentire frame with emphasis placed on the rectangle of "
+                + "\n\t\t\tinterest defined by rect_percentage, xrect and yrect" 
+                + "\n\t\taverage -for average metering that take into account the light " 
+                + "\n\t\t\tinformation from the entire frame without weighting"  
+                + "\n\t\tsegmented -for segmented metering that divides the frame "  
+                + "\n\t\t\ton 6 pieces and weighting them to avoid backlighting."
+                + "\n\t\t\tThe center piece's size is determined by the rect_percentage" 
+            + "\n\trect_percentage: defines the percentage of the image width" 
+                + "\n\t\tand height to be used as the center size. Default: 40"
+            + "\n\txrect: x coordinate for the center point of the rectangle " 
+                + "\n\t\tof interest. If you want to locate the rectangle of "
+                + "\n\t\tinterest in the image's center you have to set " 
+                + "\n\t\txrect=yrect=-1. Default: -1"
+            + "\n\tyrect: y coordinate for the center point of the rectangle "
+                +"\n\t\tof interest. Default: -1");
+#endif
+        cmd.new_command("init-aew", cli_ini_aew, "\033[1m init-aew \033[m  time<us>" 
+            + " width height segmentation", "Initialize aew algorithms", 
+            "\tThis command configures general aspects for the aew functionality" 
+            + "\n\tand starts the automatic adjustments iterations. Auto white " 
+            + "\n\tbalance and auto exposure configurations must be done before " 
+            + "\n\tyou execute this command. If not the aew will run but no adjusment"
+            + " \n\twill be made","\n\ttime: wait time in us, specifies the time between " 
             + "\n\t\talgorithm adjustments, max value=1s=1000000us"
-            + "\n\tseg: frame segmentation factor, each frame is segmented into " 
-                + "\n\t\tregions, this factor represents the percentage of the "  
-                + "\n\t\tmaximum number of possible regions"
             + "\n\twidth: captured video/image horizontal size"
             + "\n\theight: captured video/image vertical size" 
-            + "\n\tcenter_percentage: defines the percentage of the image width" 
-            + "\n\t\tand height to be used as the center size");
-        cmd.new_command("stop-aew", cli_stop_aew, "stop-aew", "End AEW algorithm", "");
-        cmd.new_command("shell", cli_shell, "shell <\"shell_cmd\">",
-            "Execute a shell command(shell_cmd) using interactive console", "");
-        cmd.new_command("ping", cli_ping, "ping", "Show if ipipe-daemon is alive", "");
-        cmd.new_command("quit", cli_exit, "quit", "Quit from the interactive console","");
-        cmd.new_command("exit", cli_exit, "exit", "Exit from the interactive console","");
-        cmd.new_command("get-video-processor", cli_get_video_processor, 
-        "get-video-processor",  "Show the video processor that is being used","");
-        cmd.new_command("get-sensor", cli_get_sensor, "get-sensor", "Show the sensor that is being used","");
-        cmd.new_command("run-config-script", cli_run_config_script, 
-        "run-config-script <script>", "Execute a group of ipipe-client commands", 
-        "\n\t\tscript: is the name of script");
+            + "\n\tsegmentation: frame segmentation factor, each frame is segmented into " 
+                + "\n\t\tregions, this factor represents the percentage of the "  
+                + "\n\t\tmaximum number of possible regions" );
+        cmd.new_command("stop-aew", cli_stop_aew, "\033[1mstop-aew\033[m", 
+            "End aew algorithm", 
+            "\tThis command stops the automatic adjustments. You need to run " 
+            + "\n\tinit-aew to restart them but you don't need to reconfigure the" 
+            + "\n\tauto white balance and auto exposure. The last configuration is " 
+            + "\n\tsaved", "");
+#if (RRAEW)
+        cmd.new_command("get-awb-config", cli_get_awb, "\033[1mget-awb-config\033[m", 
+            "Get auto white balance current configuration","", "");
+        cmd.new_command("get-ae-config", cli_get_ae, "\033[1mget-ae-config\033[m", 
+            "Get auto exposure current configuration","", "");
+        cmd.new_command("get-aew-config", cli_get_aew, "\033[1mget-aew-config\033[m", 
+            "Get aew current status and configuration", "","");
+        cmd.new_command("get-rectangle", cli_get_rect, "\033[1mget-rectangle\033[m", 
+            "Get current rectangle coordinates", "","");
+#endif
     }
 
     /**
@@ -374,19 +637,17 @@ public class IpipeCli: GLib.Object {
             /*Get the command from the stdin */
             var cmd_line = Readline.readline("ipipe-client$ ");
 
-            if (cmd_line != null) {
+            /*Removes leading and trailing whitespace */
+            cmd_line = cmd_line.strip();
+            if ((cmd_line != null) && (cmd_line.length > 1)){
                 /*Saving command on history */
                 Readline.History.add(cmd_line);
-
-                /*Removes leading and trailing whitespace */
-                cmd_line.strip();
-
                 /*Splits string into an array */
                 args = cmd_line.split(" ", -1);
 
                 /*Execute the command */
                 if (args[0] != null && cmd_line[0] != '#')
-                    cmd.execute_cmd(/*ipipe,*/ args);
+                    cmd.execute_cmd(args);
             }
         }
         Readline.History.write(home + "/.ipipe-client_history");
