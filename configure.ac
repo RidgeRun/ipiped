@@ -6,7 +6,7 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 AC_PROG_CC
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
-AC_CONFIG_FILES(ipiped-1.0.pc:ipiped-1.0.pc.in)
+AC_CONFIG_FILES(ipiped-1.1.pc:ipiped-1.1.pc.in)
 AC_CONFIG_FILES(com.ridgerun.ipiped.service:com.ridgerun.ipiped.service.in)
 
 AM_PROG_VALAC([0.7.6])
@@ -53,7 +53,7 @@ AC_SUBST(GIO_LIBS)
 
 
 dnl Now we're ready to ask for librraew
-PKG_CHECK_MODULES(LIBRRAEW, librraew >= 1.0, HAVE_LIBRRAEW=yes, HAVE_LIBRRAEW=no)
+PKG_CHECK_MODULES(LIBRRAEW, librraew >= 1.1, HAVE_LIBRRAEW=yes, HAVE_LIBRRAEW=no)
 LIBRRAEW_VALAFLAGS=`pkg-config --variable=valaflags librraew`
 
 dnl make the FLAGS and LIBS available
