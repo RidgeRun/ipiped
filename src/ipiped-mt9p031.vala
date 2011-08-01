@@ -359,7 +359,7 @@ public class Ipiped_mt9p031 : AbstcSensor{
      * @param color_pattern, array that contains the pixel position
      *                       of R, Gr, Gb and B 
      */
-    private bool get_color_pattern(ColorPattern color_pattern){
+    private bool get_color_pattern(RraewColorPattern color_pattern){
         int vf=0, hf=0;
         int ret = 0;
 
@@ -396,8 +396,8 @@ public class Ipiped_mt9p031 : AbstcSensor{
         return true;
     }
 
-    public override int get_sensor_data(Sensor *sensor){
-        ColorPattern colorptn = ColorPattern();
+    public override int get_sensor_data(RraewSensor *sensor){
+        RraewColorPattern colorptn = RraewColorPattern();
         if (!get_color_pattern (colorptn)){
             Posix.stderr.printf ("Error:\n Failed to get color pattern\n");
             return -1;
@@ -408,7 +408,7 @@ public class Ipiped_mt9p031 : AbstcSensor{
         sensor.max_gain = 128;
         sensor.min_gain = 1;
         sensor.n_gain_steps = 3;
-        sensor.gain_steps = (GainStep*)malloc(sensor.n_gain_steps*sizeof(GainStep));
+        sensor.gain_steps = (RraewGainStep*)malloc(sensor.n_gain_steps*sizeof(RraewGainStep));
         sensor.gain_steps[0].range_end = 4;
         sensor.gain_steps[0].step_n = 1;
         sensor.gain_steps[0].step_d = 8; 

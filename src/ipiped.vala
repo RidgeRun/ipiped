@@ -26,15 +26,15 @@ using rraew;
         public signal void Error(string err_message);
 #if (RRAEW)
         /** Struct that contains auto white balance configuration*/
-        awbConfiguration awb_config;
+        RraewAwbConfiguration awb_config;
         /** Flag that indicates if auto white balance is configured or not*/
         bool awb_configured;
         /** Struct that contains auto exposure configuration*/
-        aeConfiguration ae_config;
+        RraewAeConfiguration ae_config;
          /** Flag that indicates if auto exposure's configuration status*/
         bool ae_configured;
         /** Struct that contains general aew configuration*/
-        aewConfiguration aew_config;
+        RraewConfiguration aew_config;
         /** Thread for aew*/
         unowned Thread<void*> thread;
         /** Flag to indicate if the aew thread is running*/
@@ -115,7 +115,7 @@ using rraew;
                 while (aew_running) {
                     /*Wait the configured time between aew iterations*/
                     Thread.usleep(wait_time);
-                    if (run_rraew(rraew)<0){
+                    if (rraew_run(rraew)<0){
                         /*When an error occurs close aew*/
                         clean_close = false;
                         close_aew();
@@ -146,13 +146,13 @@ using rraew;
         public int set_auto_exposure_configuration(string ae, string meter, 
             int rect_percentage, int xrect, int yrect) throws IOError{
 
-            this.ae_config = aeConfiguration();
+            this.ae_config = RraewAeConfiguration();
 
              /* Define the ae algorithm*/
             if (ae == "electronic-centric")
-                ae_config.algorithm = ExposureAlgo.EC;
+                ae_config.algorithm = RraewExposureAlgo.EC;
             else if(ae == "none"){
-                ae_config.algorithm = ExposureAlgo.NONE;
+                ae_config.algorithm = RraewExposureAlgo.NONE;
                 this.ae_configured = true;
                 return 0;
             } else {
@@ -162,22 +162,22 @@ using rraew;
 
             /* Define the metering method*/
             if (meter == "partial")
-                ae_config.meter_type = MeteringType.PARTIAL_AREA;
+                ae_config.meter_type = RraewMeteringType.PARTIAL_AREA;
             else if (meter == "weighted")
-                ae_config.meter_type = MeteringType.RECT_WEIGHTED;
+                ae_config.meter_type = RraewMeteringType.RECT_WEIGHTED;
             else if (meter == "average")
-                ae_config.meter_type = MeteringType.AVERAGE;
+                ae_config.meter_type = RraewMeteringType.AVERAGE;
             else if (meter == "segmented")
-                ae_config.meter_type = MeteringType.SEGMENT;
+                ae_config.meter_type = RraewMeteringType.SEGMENT;
             else{
                 Posix.stderr.printf("\nIpiped:Invalid metering type\n");
                 return -1;
             }
             /* Only the metering systems partial, rectangular weighted and 
              * average require the definition of the rectangle of interest*/
-            if ((ae_config.meter_type == MeteringType.PARTIAL_AREA) || 
-                (ae_config.meter_type == MeteringType.RECT_WEIGHTED) || 
-                (ae_config.meter_type == MeteringType.AVERAGE)){
+            if ((ae_config.meter_type == RraewMeteringType.PARTIAL_AREA) || 
+                (ae_config.meter_type == RraewMeteringType.RECT_WEIGHTED) || 
+                (ae_config.meter_type == RraewMeteringType.AVERAGE)){
                 
                 /*Sets the center point*/
                 ae_config.rect_center_point.x = xrect;
@@ -216,17 +216,17 @@ using rraew;
         public int set_auto_white_balance_configuration(string wb, string g) 
             throws IOError{
 
-            this.awb_config = awbConfiguration();
+            this.awb_config = RraewAwbConfiguration();
 
             /* Define the awb algorithm*/
             if (wb == "white-patch")
-                awb_config.algorithm = WhiteBalanceAlgo.WHITE_PATCH;
+                awb_config.algorithm = RraewWhiteBalanceAlgo.WHITE_PATCH;
             else if (wb == "white-patch2")
-                awb_config.algorithm = WhiteBalanceAlgo.WHITE_PATCH_2;
+                awb_config.algorithm = RraewWhiteBalanceAlgo.WHITE_PATCH_2;
             else if (wb == "gray-world")
-                awb_config.algorithm = WhiteBalanceAlgo.GRAY_WORLD;
+                awb_config.algorithm = RraewWhiteBalanceAlgo.GRAY_WORLD;
             else if (wb == "none") {
-                awb_config.algorithm = WhiteBalanceAlgo.NONE;
+                awb_config.algorithm = RraewWhiteBalanceAlgo.NONE;
                 this.awb_configured = true;
                 return 0;
             } else{
@@ -236,12 +236,12 @@ using rraew;
             
             /* Define the gain module to be used*/
             if (g == "sensor")
-                awb_config.gain_type = GainType.SENSOR;
+                awb_config.gain_type = RraewGainType.SENSOR;
             else if (g == "digital")
-                awb_config.gain_type = GainType.DIGITAL;
+                awb_config.gain_type = RraewGainType.DIGITAL;
             else if (g == "default"){
                 /*Digital is the default gain*/
-                awb_config.gain_type = GainType.DIGITAL;
+                awb_config.gain_type = RraewGainType.DIGITAL;
             } else {
                 Posix.stderr.printf("\nIpiped:Invalid gain type\n");
                 return -1;
@@ -257,18 +257,18 @@ using rraew;
         public int get_auto_exposure_configuration(out string ae, out string meter, 
             out int rect_percentage, out int xrect, out int yrect) throws IOError{
 
-            if (ae_config.algorithm == ExposureAlgo.EC)
+            if (ae_config.algorithm == RraewExposureAlgo.EC)
                 ae = "electronic-centric";
             else 
                 ae = "none";
 
-            if ( ae_config.meter_type == MeteringType.PARTIAL_AREA )
+            if ( ae_config.meter_type == RraewMeteringType.PARTIAL_AREA )
                 meter = "partial";
-            else if (ae_config.meter_type == MeteringType.RECT_WEIGHTED)
+            else if (ae_config.meter_type == RraewMeteringType.RECT_WEIGHTED)
                 meter = "weighted";
-            else if (ae_config.meter_type == MeteringType.AVERAGE)
+            else if (ae_config.meter_type == RraewMeteringType.AVERAGE)
                 meter = "average";
-            else if (ae_config.meter_type == MeteringType.SEGMENT)
+            else if (ae_config.meter_type == RraewMeteringType.SEGMENT)
                 meter = "segmented";
 
             rect_percentage = ae_config.rect_percentage;
@@ -297,18 +297,18 @@ using rraew;
                 g = "";
                 return -1;
             }
-            if (awb_config.algorithm == WhiteBalanceAlgo.WHITE_PATCH)
+            if (awb_config.algorithm == RraewWhiteBalanceAlgo.WHITE_PATCH)
                 wb = "white-patch";
-            else if (awb_config.algorithm == WhiteBalanceAlgo.WHITE_PATCH_2)
+            else if (awb_config.algorithm == RraewWhiteBalanceAlgo.WHITE_PATCH_2)
                 wb = "white-patch2";
-            else if (awb_config.algorithm == WhiteBalanceAlgo.GRAY_WORLD)
+            else if (awb_config.algorithm == RraewWhiteBalanceAlgo.GRAY_WORLD)
                 wb = "gray-world";
-            else if (awb_config.algorithm == WhiteBalanceAlgo.NONE )
+            else if (awb_config.algorithm == RraewWhiteBalanceAlgo.NONE )
                 wb = "none";
 
-            if (awb_config.gain_type == GainType.SENSOR)
+            if (awb_config.gain_type == RraewGainType.SENSOR)
                 g = "sensor";
-            else if (awb_config.gain_type == GainType.DIGITAL)
+            else if (awb_config.gain_type == RraewGainType.DIGITAL)
                 g = "digital";
 
             return 0;
@@ -340,7 +340,7 @@ using rraew;
             out uint top, out uint bottom) throws IOError{
 
             if (aew_running) {
-                if (get_rectangle_coordinates(rraew, &right, &left, 
+                if (rraew_get_rectangle_coordinates(rraew, &right, &left, 
                     &top, &bottom) == 0){
                     return 0;
                 }
@@ -365,11 +365,11 @@ using rraew;
             int segment_factor) throws IOError
         {
             /** File descriptors information*/
-            FileDescriptors fd = FileDescriptors();
+            RraewFileDescriptors fd = RraewFileDescriptors();
             wait_time = time;
-            Sensor sensor = Sensor();
-            Interface interf = Interface();
-            aew_config = aewConfiguration();
+            RraewSensor sensor = RraewSensor();
+            RraewInterface interf = RraewInterface();
+            aew_config = RraewConfiguration();
 
             /* If an instance of librraew is running close it 
              * before create a new one */
@@ -411,11 +411,10 @@ using rraew;
             fd.owner_capture_fd = sensor_abstract.owner_capture_fd;
 
             /* Create rraew handler */
-            rraew = create_rraew(&awb_config, &ae_config, &aew_config, 
+            rraew = rraew_create(&awb_config, &ae_config, &aew_config, 
                 &sensor, &interf, &fd);
             if (rraew == null){
                 Posix.stderr.printf ("Can't create rraew handler\n");
-                Posix.stdout.printf ("Can't create rraew handler\n");
                 return -1;
             }
             /* Enable aew flag */
@@ -451,7 +450,7 @@ using rraew;
             /*If the rraew handler was initialized
              *destroy it*/
             if (rraew != null){
-                destroy_rraew(rraew);
+                rraew_destroy(rraew);
                 rraew = null;
             }
         }

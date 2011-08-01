@@ -430,7 +430,7 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
     }
 
 #if (RRAEW)
-    public override bool get_video_processor_data(Interface *interf){
+    public override bool get_video_processor_data(RraewInterface *interf){
         *interf = dm365_vpfe_interface;
         return true;
     }

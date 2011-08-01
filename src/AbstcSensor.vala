@@ -11,6 +11,6 @@ public abstract class AbstcSensor : GLib.Object {
     public char owner_capture_fd;
 #if (RRAEW)
     /* Methods that required the aew library*/
-    public abstract int get_sensor_data(Sensor *sensor);
+    public abstract int get_sensor_data(RraewSensor *sensor);
 #endif
 }

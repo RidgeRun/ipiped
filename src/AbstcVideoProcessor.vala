@@ -19,6 +19,6 @@ public abstract class AbstcVideoProcessor : GLib.Object {
 
 #if (RRAEW)
     /* Methods that required the aew library*/
-    public abstract bool get_video_processor_data(Interface *interf);
+    public abstract bool get_video_processor_data(RraewInterface *interf);
 #endif
 }
