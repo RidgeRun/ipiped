@@ -35,8 +35,8 @@ POST_UNINSTALL = :
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/com.ridgerun.ipiped.service.in \
-	$(srcdir)/config.h.in $(srcdir)/ipiped-1.0.pc.in \
-	$(top_srcdir)/configure depcomp install-sh missing
+	$(srcdir)/config.h.in $(srcdir)/ipiped-1.1.pc.in \
+	$(top_srcdir)/configure COPYING depcomp install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -45,7 +45,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = ipiped-1.0.pc com.ridgerun.ipiped.service
+CONFIG_CLEAN_FILES = ipiped-1.1.pc com.ridgerun.ipiped.service
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
@@ -144,6 +144,8 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_LIBS = @DBUS_LIBS@
 DBUS_SYSCONFIG_DIR = @DBUS_SYSCONFIG_DIR@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -180,6 +182,8 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -231,7 +235,7 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = ipiped-1.0.pc
+pkgconfig_DATA = ipiped-1.1.pc
 dbusdir = $(datadir)/dbus-1/system-services/
 dbus_DATA = com.ridgerun.ipiped.service
 dbusconfdir = @DBUS_SYSCONFIG_DIR@/dbus-1/system.d/
@@ -239,7 +243,7 @@ dbusconf_DATA = com.ridgerun.ipiped.conf
 ipipeconfdir = $(datadir)/ipiped/
 ipipeconf_DATA = config/dm365_mt9p031_config config/dm365_mt9p011_config
 sysconf_DATA = config/ipiped.conf
-EXTRA_DIST = ipiped-1.0.pc.in com.ridgerun.ipiped.service.in com.ridgerun.ipiped.conf config
+EXTRA_DIST = ipiped-1.1.pc.in com.ridgerun.ipiped.service.in com.ridgerun.ipiped.conf config
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -295,7 +299,7 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
-ipiped-1.0.pc: $(top_builddir)/config.status $(srcdir)/ipiped-1.0.pc.in
+ipiped-1.1.pc: $(top_builddir)/config.status $(srcdir)/ipiped-1.1.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 com.ridgerun.ipiped.service: $(top_builddir)/config.status $(srcdir)/com.ridgerun.ipiped.service.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
