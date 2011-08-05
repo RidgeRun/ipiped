@@ -59,8 +59,10 @@ using rraew;
             video_processor_abstract=_video_processor_abstract;
             sensor_abstract=_sensor_abstract;
             this.debug = false;
+#if (RRAEW)
             this.ae_configured = false;
             this.awb_configured = false;
+#endif
         }
         /**
          * Destroy a instance of Ipipe 
