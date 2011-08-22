@@ -10,6 +10,7 @@ public interface Idm365ipipe: Object{
         out double blue_gain, out double green_gain) throws IOError;
     public abstract bool set_luminance_adj(int bright, double contr) throws IOError;
     public abstract bool get_luminance_adj(out int bright, out double contr) throws IOError;
+    public abstract bool config_bsc(uint inwidth, uint inheight) throws IOError;
 }
 
 public class cli_dm365ipipe : AbstcCliRegister{
@@ -167,6 +168,36 @@ public class cli_dm365ipipe : AbstcCliRegister{
         }
     }
 
+    private int cmd_config_video_stabilization(string[]? args) {
+#if BSC_ENABLE
+        if (args[1] == null || args[2] == null) {
+            stdout.printf("Error:\nMissing argument.Execute:'help config_video_stabilization'\n");
+            return -1;
+        }
+        uint width = int.parse(args[1]);
+        uint height = int.parse(args[2]);
+
+        try {
+            if (!ipipe.config_bsc(width, height)) {
+                stderr.
+                    printf("Error:\n Failed to config bsc\n");
+                return -1;
+            } else {
+                if (_debug)
+                    stdout.printf("Ok.Set bsc configuration\n");
+                return 0;
+            }
+        }
+        catch(Error e) {
+            stderr.printf("Fail to execute command:%s\n", e.message);
+            return -1;
+        }
+#else
+        stdout.printf("Video stabilization not supported\n");
+        return 0;
+#endif
+    }
+
     /* Initialize the Command Array. */
     public override void registration(IpipeCli cli) throws IOError{
         cli.cmd.new_command("set-previewer-mode", cmd_set_previewer_mode, 
@@ -201,6 +232,16 @@ public class cli_dm365ipipe : AbstcCliRegister{
             "\033[1mget-luminance\033[m",
             "Returns the value of the Brightness(Br) and contrast(C) adjustment",
             "", "");
+        cli.cmd.new_command("config-vs", cmd_config_video_stabilization,
+            "\033[1mconfig-vs\033[m width height",
+            "Configures the boundary signal calculator module(bsc)"
+            +" needed by the video stabilization",
+            "\tThe video stabilization algorithm uses the vectors of sums"
+            +"\n\tgiven by the bsc to calculate the compensation for"
+            +"\n\tthe camera shaking."
+            +"\n\tThe bsc is configured for an image of the given dimensions.",
+            "\n\twidth: input image's width"
+            +"\n\theight: input image's height");
 
         ipipe = Bus.get_proxy_sync (BusType.SYSTEM, "com.ridgerun.ipiped",
                                                         "/com/ridgerun/ipiped/ipipe");

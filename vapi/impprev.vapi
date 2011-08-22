@@ -121,6 +121,47 @@ namespace ImpPrev {
         int out_ofst_b;
     }
     
+    [CCode (cprefix = "IPIPE_BSC_IN_")]
+    public enum IpipeBscIn{
+        Y,
+        CB,
+        CR
+    }
+
+    [CCode (cname = "struct prev_bsc")]
+    /**
+     * Struct for configuring BSC module
+     */
+    public struct PrevBSC {
+
+        uchar en;
+
+        uchar mode;
+        uchar col_en;
+        uchar row_en;
+        IpipeBscIn y_cb_cr;
+
+        uint row_vct;
+        uint row_shf;
+        uint row_vpos;
+        uint row_vnum;
+        uint row_vskip;
+        uint row_hpos;
+        uint row_hnum;
+        uint row_hskip;
+
+        uint col_vct;
+        uint col_shf;
+        uint col_vpos;
+        uint col_vnum;
+        uint col_vskip;
+        uint col_hpos;
+        uint col_hnum;
+        uint col_hskip;
+
+        void* tb_ptr;
+    }
+
     [CCode (cprefix = "IPIPEIF_DECIMATION_")]
     public enum IpipeifDecimation {
         OFF,
@@ -222,5 +263,6 @@ namespace ImpPrev {
     public const uint8 PREV_WB;
     public const uint8 PREV_LUM_ADJ;
     public const uint8 PREV_RGB2RGB_1;
+    public const uint8 PREV_BSC;
  
 }

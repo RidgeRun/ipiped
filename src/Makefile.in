@@ -239,6 +239,9 @@ ipipe_client_VALAFLAGS = --vapidir=@VAPIDIR@ --pkg glib-2.0 --pkg \
 	$(am__append_4)
 ipipe_client_CFLAGS = @GIO_CFLAGS@ -DGETTEXT_PACKAGE=\"ipipe-client\"
 ipipe_client_LDADD = @GIO_LIBS@ -lreadline -lncurses
+
+#ipiped_VALAFLAGS += --define=BSC_ENABLE
+#ipipe_client_VALAFLAGS += --define=BSC_ENABLE
 interfaces_xml := com.ridgerun.ipiped.IpipeInterface.xml
 EXTRA_DIST = $(interfaces_xml)
 interfacedir = $(datadir)/dbus-1/interfaces/

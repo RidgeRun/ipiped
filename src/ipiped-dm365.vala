@@ -429,6 +429,81 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
         return true;
     }
 
+#if BSC_ENABLE
+    /**
+     * Sets Boundary Signal Calculator parameters
+     */
+    public bool config_bsc(uint inwidth, uint inheight) throws IOError{
+        ModuleParam mod_param = ModuleParam();
+        PrevBSC bsc_mod = PrevBSC();
+        Cap cap = Cap();
+        uint rowlh =0, collv=0;
+        cap.index =0 ;
+
+        if (Posix.ioctl(this.previewer_fd , PREV_ENUM_CAP, &cap)<0) {
+            if (debug)
+                Posix.stderr.printf("Ipiped:Error in getting cap from driver\n");
+            return false;
+        }
+        /* Enable bsc in continous mode, using the Y component */
+        bsc_mod.en = 1;
+        bsc_mod.mode = 0;
+        bsc_mod.col_en = 1;
+        bsc_mod.row_en = 1;
+        bsc_mod.y_cb_cr = IpipeBscIn.Y;
+        /* Using the maximun number of vectors and try to cover the
+         * major image area */
+        bsc_mod.row_vct = 3;
+        bsc_mod.row_shf = 0;
+        bsc_mod.row_vpos = 0;
+        bsc_mod.row_vskip = ((bsc_mod.row_vct + 1) * inheight)/1920;
+        bsc_mod.row_vnum = inheight/(bsc_mod.row_vskip + 1) - 1;
+        bsc_mod.row_hpos = 0;
+        rowlh = inwidth/(bsc_mod.row_vct + 1);
+        bsc_mod.row_hskip = bsc_mod.row_vskip;
+        bsc_mod.row_hnum = rowlh / (bsc_mod.row_vskip + 1) - 1;
+
+        bsc_mod.col_vct = 3;
+        bsc_mod.col_shf = 0;
+        bsc_mod.col_hpos = 0;
+        bsc_mod.col_hskip = ((bsc_mod.col_vct + 1) * inwidth)/1920;;
+        bsc_mod.col_hnum = inwidth/(bsc_mod.col_hskip + 1) - 1;
+        bsc_mod.col_vpos = 0;
+        collv = inheight/(bsc_mod.col_vct + 1);
+        bsc_mod.col_vskip = bsc_mod.col_hskip;
+        bsc_mod.col_vnum = collv / (bsc_mod.col_hskip + 1) - 1;
+
+        cap.module_id = PREV_BSC;
+        strcpy(mod_param.version,cap.version);
+        mod_param.module_id = cap.module_id;
+        mod_param.len =(uint8)sizeof(PrevBSC);
+        mod_param.param = &bsc_mod;
+
+        if (Posix.ioctl(this.previewer_fd , PREV_S_PARAM, &mod_param) < 0) {
+            if (debug)
+                Posix.stderr.printf("Ipiped:Error in Setting params to driver\n");
+            Posix.close(this.previewer_fd );
+            return false;
+        }
+
+        if (debug) {
+            Posix.stdout.printf(" \nIPIPE BSC Info,\n");
+            Posix.stdout.printf(" inwidth  = %u,\n", inwidth);
+            Posix.stdout.printf(" inheight = %u,\n", inheight);
+            Posix.stdout.printf(" rowNumV        = %u,\n", bsc_mod.row_vnum);
+            Posix.stdout.printf(" rowSkipV       = %u,\n", bsc_mod.row_vskip);
+            Posix.stdout.printf(" rowNumH        = %u,\n", bsc_mod.row_hnum);
+            Posix.stdout.printf(" rowSkipH       = %u,\n", bsc_mod.row_hskip);
+            Posix.stdout.printf(" colNumVectors  = %u,\n", bsc_mod.col_vct);
+            Posix.stdout.printf(" colNumV        = %u,\n", bsc_mod.col_vnum);
+            Posix.stdout.printf(" colSkipV       = %u,\n", bsc_mod.col_vskip);
+            Posix.stdout.printf(" colNumH        = %u,\n", bsc_mod.col_hnum);
+            Posix.stdout.printf(" colSkipH       = %u,\n\n", bsc_mod.col_hskip);
+        }
+        return true;
+    }
+#endif
+
 #if (RRAEW)
     public override bool get_video_processor_data(RraewInterface *interf){
         *interf = dm365_vpfe_interface;

@@ -19,6 +19,9 @@ ipiped_VALAFLAGS += --define=RRAEW
 ipipe_client_VALAFLAGS += --define=RRAEW 
 endif
 
+#ipiped_VALAFLAGS += --define=BSC_ENABLE
+#ipipe_client_VALAFLAGS += --define=BSC_ENABLE
+
 interfaces_xml := com.ridgerun.ipiped.IpipeInterface.xml
 
 EXTRA_DIST= $(interfaces_xml)
