@@ -405,7 +405,7 @@ public class Ipiped_mt9p031 : AbstcSensor{
         sensor.colorptn = colorptn;
         sensor.max_exp_time = 0x7fffffff;
         sensor.min_exp_time = 1;
-        sensor.max_gain = 128;
+        sensor.max_gain = 32; // Use only analog gain
         sensor.min_gain = 1;
         sensor.n_gain_steps = 3;
         sensor.gain_steps = (RraewGainStep*)malloc(sensor.n_gain_steps*sizeof(RraewGainStep));
