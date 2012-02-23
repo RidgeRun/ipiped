@@ -453,24 +453,29 @@ public class Ipiped_dm365 : AbstcVideoProcessor{
         bsc_mod.y_cb_cr = IpipeBscIn.Y;
         /* Using the maximun number of vectors and try to cover the
          * major image area */
+
+        /*Calculating skip, we are using 4 vectors (vct=3)*/
+        uint hskip = (4 * inwidth)/1920;
+        uint vskip = (4 * inheight)/1920;
+  
         bsc_mod.row_vct = 3;
         bsc_mod.row_shf = 0;
         bsc_mod.row_vpos = 0;
-        bsc_mod.row_vskip = ((bsc_mod.row_vct + 1) * inheight)/1920;
+        bsc_mod.row_vskip = vskip;
         bsc_mod.row_vnum = inheight/(bsc_mod.row_vskip + 1) - 1;
         bsc_mod.row_hpos = 0;
         rowlh = inwidth/(bsc_mod.row_vct + 1);
-        bsc_mod.row_hskip = bsc_mod.row_vskip;
+        bsc_mod.row_hskip = hskip;
         bsc_mod.row_hnum = rowlh / (bsc_mod.row_vskip + 1) - 1;
 
         bsc_mod.col_vct = 3;
         bsc_mod.col_shf = 0;
         bsc_mod.col_hpos = 0;
-        bsc_mod.col_hskip = ((bsc_mod.col_vct + 1) * inwidth)/1920;;
+        bsc_mod.col_hskip = hskip;
         bsc_mod.col_hnum = inwidth/(bsc_mod.col_hskip + 1) - 1;
         bsc_mod.col_vpos = 0;
         collv = inheight/(bsc_mod.col_vct + 1);
-        bsc_mod.col_vskip = bsc_mod.col_hskip;
+        bsc_mod.col_vskip = vskip;
         bsc_mod.col_vnum = collv / (bsc_mod.col_hskip + 1) - 1;
 
         cap.module_id = PREV_BSC;
